@@ -1,0 +1,30 @@
+[project]
+name = "totaltrackie"
+version = "v1.0.0"
+dependencies = [
+    "PySide6_Essentials"
+]
+requires-python = ">=3.10"
+authors = [
+    {name = "blsam"},
+]
+maintainers = [
+    {name = "blsam"}
+]
+description = "TotalTrackie, minimalist daily time tracker app"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Programming Language :: Python"
+]
+
+[project.urls]
+Homepage = "https://github.com/blsam/totaltrackie"
+Repository = "https://github.com/blsam/totaltrackie.git"
+"Bug Tracker" = "https://github.com/blsam/totaltrackie/issues"
+
+[project.gui-scripts]
+totaltrackie = "totaltrackie.__main__:main"
+
+[tool.setuptools.package-data]
+totaltrackie = ["icons/*.svg"]
