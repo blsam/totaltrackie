@@ -19,16 +19,3 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
-from datetime import date
-
-# pylint: disable=no-name-in-module
-from PySide6.QtCore import QDate
-# pylint: enable=no-name-in-module
-
-
-def q_date_to_python_date(d: QDate) -> date:
-    return date(year=d.year(), month=d.month(), day=d.day())
-
-
-def python_date_to_q_date(d: date) -> QDate:
-    return QDate(d.year, d.month, d.day)

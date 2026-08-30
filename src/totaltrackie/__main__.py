@@ -27,9 +27,11 @@ from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
-from typing import Type
+from typing import Any
 
-from PySide6.QtWidgets import QApplication
+# pylint: disable=no-name-in-module
+from PySide6.QtWidgets import QApplication, QMessageBox
+# pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME
 from totaltrackie.persistent import PersistenceManager
@@ -38,7 +40,7 @@ from totaltrackie.ui.main import MainWindow
 _logger = logging.getLogger(APP_NAME)
 
 
-def _configure_logging(log_base_dir: Path, logger_obj: logging.Logger, level: str):
+def _configure_logging(log_base_dir: Path, logger_obj: logging.Logger, level: str) -> None:
     handler = RotatingFileHandler(
         log_base_dir / "app.log",
         backupCount=5,
@@ -50,7 +52,7 @@ def _configure_logging(log_base_dir: Path, logger_obj: logging.Logger, level: st
     logger_obj.addHandler(handler)
 
 
-def main():
+def main() -> int:
     parser = ArgumentParser()
     parser.add_argument("--debug", action="store_true", default=False, help="Enable debug log")
     parser.add_argument(
@@ -66,10 +68,31 @@ def main():
 
     _configure_logging(persistent_store.logs_folder, _logger, level)
 
-    def _exc_handler(exc_type: Type[BaseException], exc: Exception, trace: TracebackType):
-        lines = "\n".join(traceback.format_exception(exc_type, exc, trace))
-        for line in lines.splitlines():
-            _logger.critical(line.rstrip())
+    def _exc_handler(exc_type: type[BaseException], exc: BaseException, trace: TracebackType | None) -> Any:
+        if issubclass(exc_type, (KeyboardInterrupt, SystemExit)):
+            sys.__excepthook__(exc_type, exc, trace)
+            return
+
+        _logger.critical("Critical unhandled error: %s", exc, exc_info=exc)
+
+        if (app := QApplication.instance()) is not None:
+            message = "".join(traceback.format_exception(exc_type, exc, trace))
+
+            try:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.setText(
+                    f"An unexpected critical error occurred, please report to developers:\n\n {exc} \n\n"
+                    f"App now closes."
+                )
+                msg.setDetailedText(message)
+                msg.setWindowTitle("Critical error")
+                msg.exec()
+            except Exception as error:  # pylint: disable=broad-exception-caught
+                _logger.critical("Could not display the error dialog.", exc_info=error)
+            finally:
+                app.exit(5)
+
         sys.__excepthook__(exc_type, exc, trace)
 
     sys.excepthook = _exc_handler
@@ -83,6 +106,8 @@ def main():
 
     _logger.debug("Starting application...")
     _application.exec()
+    _logger.debug("Application stop.")
+    return 0
 
 
 if __name__ == "__main__":

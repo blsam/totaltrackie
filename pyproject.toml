@@ -1,8 +1,8 @@
 [project]
 name = "totaltrackie"
-version = "v1.0.0"
+version = "1.1.0"
 dependencies = [
-    "PySide6_Essentials"
+    "PySide6_Essentials ~= 6.11.2"
 ]
 requires-python = ">=3.10"
 authors = [
@@ -13,8 +13,10 @@ maintainers = [
 ]
 description = "TotalTrackie, minimalist daily time tracker app"
 readme = "README.md"
-license = {file = "LICENSE.md"}
+license = "MIT"
+license-files = ["LICENSE.md", "NOTICE.md"]
 classifiers = [
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python"
 ]
 
@@ -26,5 +28,89 @@ Repository = "https://github.com/blsam/totaltrackie.git"
 [project.gui-scripts]
 totaltrackie = "totaltrackie.__main__:main"
 
+[project.entry-points."totaltrackie.plugins"]
+# That just a test, so, comment
+# "Default generator for one day" = "totaltrackie.ui.report:generic_report_generator_single_day"
+
+[project.entry-points."totaltrackie.plugins_v2"]
+"Default generator" = "totaltrackie.ui.report:generic_report_generator"
+
 [tool.setuptools.package-data]
-totaltrackie = ["icons/*.svg"]
+totaltrackie = ["icon_data/*.svg"]
+
+[dependency-groups]
+dev = [
+    "mypy ~= 2.3.1",
+    "pylint ~= 4.0.8",
+    "isort ~= 9.0.1",
+    "black ~= 26.5.1",
+]
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+combine_as_imports = true
+
+[tool.mypy]
+mypy_path = ["src"]
+files = ["src"]
+strict = true
+python_version = "3.11"
+
+no_namespace_packages = true
+
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+
+strict_equality = true
+strict_bytes = true
+extra_checks = true
+
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.main]
+source-roots = ["src"]
+py-version = "3.11"
+load-plugins = [
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.check_elif",
+    "pylint.extensions.code_style",
+    "pylint.extensions.comparison_placement",
+    "pylint.extensions.confusing_elif",
+    "pylint.extensions.consider_refactoring_into_while_condition",
+    "pylint.extensions.docparams",
+    "pylint.extensions.empty_comment",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.no_self_use",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing",
+]
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "consider-using-assignment-expr",
+    "invalid-name",
+    "too-many-instance-attributes",
+    "too-few-public-methods",
+    "empty-comment",
+]

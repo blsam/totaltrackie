@@ -20,10 +20,11 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# pylint: disable=no-name-in-module
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+# pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME
-from totaltrackie.ui._utils import connect_event
 from totaltrackie.ui.icons import IconResource
 
 
@@ -35,9 +36,9 @@ class AboutDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
         confirm_button = QPushButton(IconResource.OK.get_icon(), "OK")
-        connect_event(confirm_button.clicked, self.accept)
+        confirm_button.clicked.connect(self.accept)
 
-        main_layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout()
         about_label = QLabel(f"{APP_NAME} is minimalist daily time tracker app under MIT license")
         about_label.setOpenExternalLinks(True)
         main_layout.addWidget(about_label)
@@ -50,10 +51,17 @@ class AboutDialog(QDialog):
 
         main_layout.addWidget(py_side6_label)
         main_layout.addWidget(qt_framework_label)
+        main_layout.addWidget(QLabel(
+            "Both libraries are used under the terms of GNU Lesser General Public License version 3 (LGPLv3)"
+        ))
+        license_label = QLabel('You can view the license at <a href="gnu.org/licenses/lgpl-3.0">gnu.org</a>')
+        license_label.setOpenExternalLinks(True)
+        main_layout.addWidget(license_label)
+
 
         layout.addLayout(main_layout)
 
-        confirm_layout = QHBoxLayout(self)
+        confirm_layout = QHBoxLayout()
         confirm_layout.addWidget(confirm_button)
 
         layout.addLayout(confirm_layout)

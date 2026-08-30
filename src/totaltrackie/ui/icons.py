@@ -19,11 +19,18 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
-
+import logging
 from enum import Enum, auto
-from pathlib import Path
+from importlib.resources import as_file, files
+from pathlib import PurePosixPath
 
+# pylint: disable=no-name-in-module
 from PySide6.QtGui import QIcon
+# pylint: enable=no-name-in-module
+
+from totaltrackie.core import APP_NAME
+
+_logger = logging.getLogger(__name__)
 
 
 class IconResource(Enum):
@@ -40,5 +47,7 @@ class IconResource(Enum):
     TEMPLATES = auto()
 
     def get_icon(self) -> QIcon:
-        icon = QIcon(str(Path(__file__).absolute().parent.parent / "icons" / f"{self.name.lower()}.svg"))
-        return icon
+        relative_path = PurePosixPath("icon_data", f"{self.name.lower()}.svg")
+        with as_file(files(APP_NAME).joinpath(str(relative_path))) as real_path:
+            _logger.debug("Loading resource icon from package %s...", real_path)
+            return QIcon(str(real_path))

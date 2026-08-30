@@ -23,10 +23,10 @@
 import dataclasses
 import json
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
-from totaltrackie.core import Task, TasksManager, TimeSpan
+from totaltrackie.core import Task, TasksManager, TimeSpan, get_current_utc_time
 
 
 @dataclass
@@ -34,6 +34,8 @@ class Settings:
     work_time_hours: int = 8
     work_time_minutes: int = 0
     templates: dict[str, bool] = dataclasses.field(default_factory=dict)
+    preferred_report_generator: str = ""
+    plugins_settings: dict[str, dict[str, str]] = dataclasses.field(default_factory=dict)
 
     @property
     def work_time_as_timedelta(self) -> timedelta:
@@ -58,6 +60,8 @@ class PersistenceManager:
                         "workTimeHours": settings.work_time_hours,
                         "workTimeMinutes": settings.work_time_minutes,
                         "templatedTasks": settings.templates,
+                        "pluginsSettings": settings.plugins_settings,
+                        "preferredReportGenerator": settings.preferred_report_generator,
                     },
                     indent=4,
                 )
@@ -79,6 +83,10 @@ class PersistenceManager:
                     settings.templates = {item: False for item in templated_tasks}
                 elif isinstance(templated_tasks, dict):
                     settings.templates = templated_tasks
+
+                settings.plugins_settings = parsed_data.get("pluginsSettings", {})
+                settings.preferred_report_generator = str(parsed_data.get("preferredReportGenerator", ""))
+
         except (FileNotFoundError, json.JSONDecodeError):
             self.save_settings(settings)
         return settings
@@ -107,9 +115,16 @@ class PersistenceManager:
 
         save_file.write_text(json.dumps(data, indent=4), encoding="utf-8")
 
-    def load_tasks(self, day: date, manager: TasksManager) -> None:
+    @staticmethod
+    def _sanitize_end_of_timeframe(saved_stamp: str | None, load_day: date) -> datetime | None:
+        stamp = datetime.fromisoformat(saved_stamp) if saved_stamp is not None else None
+        if load_day < get_current_utc_time().date() and stamp is None:
+            stamp = datetime.combine(load_day, time.max, tzinfo=timezone.utc)
+        return stamp
+
+    def load_tasks_raw(self, day: date) -> list[Task]:
         save_file = self._get_save_file_name(day)
-        manager.clear()
+        tasks = []
         if save_file.is_file():
             data = json.loads(save_file.read_text(encoding="utf-8"))
             for item in data:
@@ -119,12 +134,18 @@ class PersistenceManager:
                     timespans=[
                         TimeSpan(
                             start=datetime.fromisoformat(timespan["start"]),
-                            stop=(datetime.fromisoformat(timespan["stop"]) if timespan["stop"] is not None else None),
+                            stop=self._sanitize_end_of_timeframe(timespan["stop"], day),
                         )
                         for timespan in item["timespans"]
                     ],
                 )
-                manager.add(task)
+                tasks.append(task)
+        return tasks
+
+    def load_tasks(self, day: date, manager: TasksManager) -> None:
+        manager.clear()
+        for task in self.load_tasks_raw(day):
+            manager.add(task)
 
     @property
     def logs_folder(self) -> Path:

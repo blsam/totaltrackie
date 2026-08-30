@@ -23,10 +23,10 @@
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import List
 
-from PySide6.QtCore import QDate, QModelIndex, QTimer, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QFont, QStandardItem, QStandardItemModel
+# pylint: disable=no-name-in-module
+from PySide6.QtCore import QDate, QModelIndex, QTimer, QUrl, Slot
+from PySide6.QtGui import QAction, QDesktopServices, QFont, QStandardItem, QStandardItemModel, QCloseEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -44,16 +44,19 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+# pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME, Task, TasksManager
 from totaltrackie.persistent import PersistenceManager
-from totaltrackie.ui._utils import connect_event
+from totaltrackie.ui._utils import q_date_to_python_date
 from totaltrackie.ui.about import AboutDialog
 from totaltrackie.ui.icons import IconResource
-from totaltrackie.ui.report import ReportGenerateDialog
+from totaltrackie.ui.report import ReportDialog
 from totaltrackie.ui.settings import SettingsWindow
 from totaltrackie.ui.task import EditTaskDialogWindow
 from totaltrackie.ui.templates import TemplatesDialog
+from totaltrackie.ui.transfer import TransferTimeDialog
+
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +71,12 @@ class _MenuActions:
 
 
 class MainWindow(QMainWindow):
+    # pylint: disable-next=too-many-statements
     def __init__(self, store: PersistenceManager):
         super().__init__()
         self.setWindowIcon(IconResource.APP.get_icon())
         self._tray_icon = QSystemTrayIcon(self.windowIcon())
-        connect_event(self._tray_icon.activated, self._on_tray_icon_clicked)
+        self._tray_icon.activated.connect(self._on_tray_icon_clicked)
 
         self._menu_actions = self._build_action_menu()
 
@@ -83,7 +87,7 @@ class MainWindow(QMainWindow):
 
         tray_menu = QMenu()
         quit_action = QAction("Exit", self)
-        connect_event(quit_action.triggered, self._on_application_exit)
+        quit_action.triggered.connect(self._on_application_exit)
 
         tray_menu.addAction(self._menu_actions.relax)
         tray_menu.addAction(self._menu_actions.settings)
@@ -97,15 +101,15 @@ class MainWindow(QMainWindow):
         relax_font.setBold(True)
         relax_font.setPointSize(14)
         self._relax_button.setFont(relax_font)
-        connect_event(self._relax_button.clicked, self._on_relax_button_clicked)
+        self._relax_button.clicked.connect(self._on_relax_button_clicked)
 
         self._add_button = QPushButton(IconResource.ADD.get_icon(), "Add Task")
-        connect_event(self._add_button.clicked, self._on_task_add_button_clicked)
+        self._add_button.clicked.connect(self._on_task_add_button_clicked)
         self._remove_button = QPushButton(IconResource.REMOVE.get_icon(), "Remove Task")
-        connect_event(self._remove_button.clicked, self._on_task_remove_button_clicked)
+        self._remove_button.clicked.connect(self._on_task_remove_button_clicked)
 
         self._edit_button = QPushButton(IconResource.EDIT.get_icon(), "Edit Task")
-        connect_event(self._edit_button.clicked, self._on_task_edit_button_clicked)
+        self._edit_button.clicked.connect(self._on_task_edit_button_clicked)
 
         self._tasks_model = TaskStorageDataModel()
         self._tasks_view = QTableView()
@@ -115,13 +119,10 @@ class MainWindow(QMainWindow):
         self._tasks_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self._tasks_view.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._tasks_view.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        connect_event(self._tasks_view.doubleClicked, self._on_start_button_clicked)
+        self._tasks_view.doubleClicked.connect(self._on_start_button_clicked)
         self._tasks_view.setModel(self._tasks_model)
 
-        connect_event(
-            self._tasks_view.selectionModel().selectionChanged,
-            self._on_task_selection_changed,
-        )
+        self._tasks_view.selectionModel().selectionChanged.connect(self._on_task_selection_changed)
 
         time_left_label_prefix = QLabel("Work Time left:")
         self._time_left_label = QLabel("N/A")
@@ -137,7 +138,7 @@ class MainWindow(QMainWindow):
         self._update_timer.setInterval(1 * 1000)
         self._update_timer.setSingleShot(False)
 
-        connect_event(self._update_timer.timeout, self._on_update_timer_tick)
+        self._update_timer.timeout.connect(self._on_update_timer_tick)
         self._update_timer.start()
 
         layout = QVBoxLayout()
@@ -164,7 +165,7 @@ class MainWindow(QMainWindow):
         self._day_selector = QDateEdit()
         self._day_selector.setCalendarPopup(True)
         date_now = date.today()
-        connect_event(self._day_selector.dateChanged, self._on_current_date_changed)
+        self._day_selector.dateChanged.connect(self._on_current_date_changed)
         self._day_selector.setDate(QDate(date_now.year, date_now.month, date_now.day))
         footer_layout.addWidget(self._day_selector)
 
@@ -183,23 +184,28 @@ class MainWindow(QMainWindow):
         task_menu = self.menuBar().addMenu("&Tasks")
 
         stop_action = QAction(IconResource.RELAX.get_icon(), "Relax", self)
-        connect_event(stop_action.triggered, self._on_relax_button_clicked)
+        stop_action.triggered.connect(self._on_relax_button_clicked)
 
         start_action = QAction(IconResource.START.get_icon(), "Start", self)
-        connect_event(start_action.triggered, self._on_start_button_clicked)
+        start_action.triggered.connect(self._on_start_button_clicked)
 
         report_action = QAction(IconResource.REPORT.get_icon(), "Build &report...", self)
-        connect_event(report_action.triggered, self._on_report_button_click)
+        report_action.triggered.connect(self._on_report_button_click)
+
+        transfer_time_action = QAction(IconResource.START.get_icon(), "&Transfer time", self)
+        transfer_time_action.triggered.connect(self._on_task_transfer_time_menu_clicked)
 
         task_menu.addActions((start_action, stop_action))
+        task_menu.addSeparator()
+        task_menu.addAction(transfer_time_action)
         task_menu.addSeparator()
         task_menu.addAction(report_action)
 
         settings_action = QAction(IconResource.SETTINGS.get_icon(), "Settings", self)
-        connect_event(settings_action.triggered, self._on_settings_button_clicked)
+        settings_action.triggered.connect(self._on_settings_button_clicked)
 
         template_action = QAction(IconResource.TEMPLATES.get_icon(), "Templates...", self)
-        connect_event(template_action.triggered, self._on_templates_button_click)
+        template_action.triggered.connect(self._on_templates_button_click)
 
         preferences_menu = self.menuBar().addMenu("&Preferences")
         preferences_menu.addAction(settings_action)
@@ -207,10 +213,10 @@ class MainWindow(QMainWindow):
 
         help_menu = self.menuBar().addMenu("&Help")
         about_action = QAction("About", self)
-        connect_event(about_action.triggered, self._on_about_clicked)
+        about_action.triggered.connect(self._on_about_clicked)
 
         open_storage_action = QAction("Open persistent &storage location...", self)
-        connect_event(open_storage_action.triggered, self._on_open_storage_clicked)
+        open_storage_action.triggered.connect(self._on_open_storage_clicked)
 
         help_menu.addAction(open_storage_action)
         help_menu.addSeparator()
@@ -224,19 +230,23 @@ class MainWindow(QMainWindow):
             settings=settings_action,
         )
 
-    def _on_open_storage_clicked(self):
+    @Slot()
+    def _on_open_storage_clicked(self) -> None:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._persistent_store.store_dir)))
 
-    def _on_about_clicked(self):
+    @Slot()
+    def _on_about_clicked(self) -> None:
         about_dialog = AboutDialog(self)
         about_dialog.exec()
 
-    def _on_tray_icon_clicked(self, reason: QSystemTrayIcon.ActivationReason):
+    @Slot(QSystemTrayIcon.ActivationReason)
+    def _on_tray_icon_clicked(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             logger.debug("Show application main window as tray icon double-clicked")
             self.show()
 
-    def _on_templates_button_click(self):
+    @Slot()
+    def _on_templates_button_click(self) -> None:
         templates_dialog = TemplatesDialog(self, self._settings.templates)
         code = templates_dialog.exec()
 
@@ -254,7 +264,8 @@ class MainWindow(QMainWindow):
             self._settings.templates.update(new_templates)
             self._persistent_store.save_settings(self._settings)
 
-    def _on_application_exit(self):
+    @Slot()
+    def _on_application_exit(self) -> None:
         active_task = self._task_manager.active()
         should_exit = True
         if active_task is not None:
@@ -271,10 +282,10 @@ class MainWindow(QMainWindow):
             if box.result() == QMessageBox.StandardButton.Cancel:
                 should_exit = False
 
-        if should_exit:
-            QApplication.instance().quit()
+        if should_exit and (app := QApplication.instance()) is not None:
+            app.quit()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         event.ignore()
         logger.debug("Hiding main window...")
         self.hide()
@@ -282,7 +293,7 @@ class MainWindow(QMainWindow):
         logger.debug("Stopping update timer...")
         self._update_timer.stop()
 
-    def show(self):
+    def show(self) -> None:
         self._tray_icon.show()
         super().show()
 
@@ -292,7 +303,7 @@ class MainWindow(QMainWindow):
 
     @property
     def selected_task(self) -> int:
-        selection: List[QModelIndex] = self._tasks_view.selectedIndexes()
+        selection: list[QModelIndex] = self._tasks_view.selectedIndexes()
         if not selection:
             return -1
         return selection[0].row()
@@ -300,13 +311,14 @@ class MainWindow(QMainWindow):
     @property
     def selected_date(self) -> date:
         gui_date = self._day_selector.date()
-        return date(year=gui_date.year(), month=gui_date.month(), day=gui_date.day())
+        return q_date_to_python_date(gui_date)
 
-    def _control_relax_action(self, status: bool):
+    def _control_relax_action(self, status: bool) -> None:
         self._relax_button.setEnabled(status)
         self._menu_actions.relax.setEnabled(status)
 
-    def _on_current_date_changed(self):
+    @Slot()
+    def _on_current_date_changed(self) -> None:
         self._persistent_store.load_tasks(self.selected_date, self._task_manager)
         self._tasks_model.refresh(self._task_manager, force=True)
 
@@ -316,7 +328,8 @@ class MainWindow(QMainWindow):
             logger.debug("Activating update timer after changing date...")
             self._update_timer.start()
 
-    def _on_settings_button_clicked(self):
+    @Slot()
+    def _on_settings_button_clicked(self) -> None:
         settings_window = SettingsWindow(self, self._settings)
         settings_window.exec()
 
@@ -327,7 +340,8 @@ class MainWindow(QMainWindow):
             self._on_update_timer_tick()
             self._persistent_store.save_settings(self._settings)
 
-    def _on_update_timer_tick(self):
+    @Slot()
+    def _on_update_timer_tick(self) -> None:
         active_task = self._task_manager.active()
         left_time: int = int(
             self._settings.work_time_as_timedelta.total_seconds() - self._task_manager.get_tasks_cumulative_time()
@@ -342,17 +356,17 @@ class MainWindow(QMainWindow):
 
         if active_task is not None:
             self._time_left_label_prefix.setText("Active task time:")
-            active_task_time = str(timedelta(seconds=int(self._task_manager.active().total_seconds())))
+            active_task_time = str(timedelta(seconds=int(active_task.total_seconds())))
             self._time_task_label.setText(active_task_time)
         else:
             self._time_left_label_prefix.setText("End of work at:")
             if self.selected_date == date.today() and left_time > 0:
-                active_task_time = datetime.now() + timedelta(seconds=left_time)
-                self._time_task_label.setText(active_task_time.strftime("%H:%M:%S"))
+                active_task_time = (datetime.now() + timedelta(seconds=left_time)).strftime("%H:%M:%S")
+                self._time_task_label.setText(active_task_time)
             else:
                 self._time_task_label.setText("N/A")
 
-    def _update_buttons_state(self):
+    def _update_buttons_state(self) -> None:
         if self.selected_date != date.today():
             self._edit_button.setEnabled(False)
             self._remove_button.setEnabled(False)
@@ -366,14 +380,17 @@ class MainWindow(QMainWindow):
             self._edit_button.setEnabled(True)
             self._remove_button.setEnabled(True)
             if self.selected_task != -1:
-                self._menu_actions.start.setEnabled(not self._task_manager.get(self.selected_task).is_started())
+                task = self._task_manager.get(self.selected_task)
+                enable = False if task is None else (not task.is_started())
+                self._menu_actions.start.setEnabled(enable)
             else:
                 self._menu_actions.start.setEnabled(False)
                 self._edit_button.setEnabled(False)
                 self._remove_button.setEnabled(False)
             self._control_relax_action(self._task_manager.active() is not None)
 
-    def _on_start_button_clicked(self):
+    @Slot()
+    def _on_start_button_clicked(self) -> None:
         # This is also called when double-clicked, so, here additional check
         if not self._menu_actions.start.isEnabled():
             return
@@ -382,7 +399,7 @@ class MainWindow(QMainWindow):
         self._task_manager.start(self.selected_task)
         self._update_buttons_state()
 
-        if self._update_timer.isActive() is False:
+        if not self._update_timer.isActive():
             self._update_timer.start()
 
         self._persistent_store.save_tasks(self.selected_date, self._task_manager)
@@ -391,9 +408,12 @@ class MainWindow(QMainWindow):
         self._tasks_model.invalidate()
         self._tasks_model.refresh(self._task_manager)
 
-    def _on_relax_button_clicked(self):
+    @Slot()
+    def _on_relax_button_clicked(self) -> None:
         logger.debug("Starting relax...")
         index = self._task_manager.active_index()
+        if index is None:
+            return
 
         self._task_manager.stop_active()
 
@@ -406,8 +426,12 @@ class MainWindow(QMainWindow):
         logger.debug("Scheduling save...")
         self._persistent_store.save_tasks(self.selected_date, self._task_manager)
 
-    def _on_task_remove_button_clicked(self):
+    @Slot()
+    def _on_task_remove_button_clicked(self) -> None:
         task = self._task_manager.get(self.selected_task)
+        if task is None:
+            return
+
         box = QMessageBox(
             QMessageBox.Icon.Question,
             "Deletion confirmation",
@@ -427,7 +451,8 @@ class MainWindow(QMainWindow):
 
             self._tasks_model.refresh(self._task_manager, force=True)
 
-    def _on_task_add_button_clicked(self):
+    @Slot()
+    def _on_task_add_button_clicked(self) -> None:
         add_dialog = EditTaskDialogWindow(self)
         dialog_result = None
 
@@ -436,7 +461,17 @@ class MainWindow(QMainWindow):
             task = add_dialog.get_result_as_task()
             if task is not None:
                 logger.debug("Trying to add a new task %s", task.name)
-                if self._task_manager.has(task.name):
+                if not task.name:
+                    box = QMessageBox(
+                        QMessageBox.Icon.Warning,
+                        "Warning",
+                        "Cannot create task with empty name!",
+                    )
+                    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+                    box.setWindowIcon(self.windowIcon())
+                    box.exec()
+                    dialog_result = None
+                elif self._task_manager.has(task.name):
                     box = QMessageBox(
                         QMessageBox.Icon.Warning,
                         "Warning",
@@ -452,7 +487,23 @@ class MainWindow(QMainWindow):
                     self._persistent_store.save_tasks(self.selected_date, self._task_manager)
                     self._tasks_model.refresh(self._task_manager, force=True)
 
-    def _on_task_edit_button_clicked(self):
+    @Slot()
+    def _on_task_transfer_time_menu_clicked(self) -> None:
+        if not self._task_manager.has_tasks():
+            box = QMessageBox(QMessageBox.Icon.Warning, "Warning", "No tasks to transfer time for!")
+            box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            box.setWindowIcon(self.windowIcon())
+            box.exec()
+            return
+
+        dialog = TransferTimeDialog(self, self._task_manager)
+        dialog.exec()
+        self._tasks_model.invalidate()
+        self._tasks_model.refresh(self._task_manager)
+        self._persistent_store.save_tasks(self.selected_date, self._task_manager)
+
+    @Slot()
+    def _on_task_edit_button_clicked(self) -> None:
         task = self._task_manager.get(self.selected_task)
         if task is None:
             return
@@ -468,11 +519,13 @@ class MainWindow(QMainWindow):
             self._tasks_model.invalidate(self.selected_task)
             self._tasks_model.refresh(self._task_manager)
 
-    def _on_task_selection_changed(self):
+    @Slot()
+    def _on_task_selection_changed(self) -> None:
         self._update_buttons_state()
         self._on_update_timer_tick()
 
-    def _on_report_button_click(self):
+    @Slot()
+    def _on_report_button_click(self) -> None:
         if self._task_manager.active() is not None:
             box = QMessageBox(QMessageBox.Icon.Warning, "Warning", "Active tasks must be completed")
             box.setStandardButtons(QMessageBox.StandardButton.Ok)
@@ -480,25 +533,25 @@ class MainWindow(QMainWindow):
             box.exec()
             return
 
-        dialog = ReportGenerateDialog(self, self.selected_date, self._task_manager.get_tasks())
+        dialog = ReportDialog(self, self.selected_date, persistent_manager=self._persistent_store)
         dialog.exec()
 
 
 class TaskStorageDataModel(QStandardItemModel):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(0, 3)
         self.setHorizontalHeaderLabels(["Task", "Duration", "Comments"])
 
         self._invalidated_rows: list[int] = []
         self._invalidate_all: bool = False
 
-    def invalidate(self, row: int = -1):
+    def invalidate(self, row: int = -1) -> None:
         if row <= -1:
             self._invalidate_all = True
         else:
             self._invalidated_rows.append(row)
 
-    def refresh(self, manager: TasksManager, force: bool = False):
+    def refresh(self, manager: TasksManager, force: bool = False) -> None:
         if force:
             self._invalidate_all = True
 
@@ -508,14 +561,14 @@ class TaskStorageDataModel(QStandardItemModel):
                 self._format_task_entry(index, task)
         else:
             for row in self._invalidated_rows:
-                task = manager.get(row)
-                if task is None:
+                row_task = manager.get(row)
+                if row_task is None:
                     continue
-                self._format_task_entry(row, task)
+                self._format_task_entry(row, row_task)
         self._invalidated_rows.clear()
         self._invalidate_all = False
 
-    def _format_task_entry(self, row: int, task: Task):
+    def _format_task_entry(self, row: int, task: Task) -> None:
         self.setItem(row, 0, QStandardItem(task.name))
         last_comment_line: str = "" if not task.comments else task.comments.splitlines()[-1]
         self.setItem(row, 2, QStandardItem(last_comment_line))

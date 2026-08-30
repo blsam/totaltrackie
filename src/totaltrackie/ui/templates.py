@@ -20,7 +20,8 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from PySide6 import QtCore
+# pylint: disable=no-name-in-module
+from PySide6.QtCore import Slot, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QDialog,
@@ -33,8 +34,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+# pylint: enable=no-name-in-module
 
-from totaltrackie.ui._utils import connect_event
 from totaltrackie.ui.icons import IconResource
 
 
@@ -65,14 +66,14 @@ class TemplatesDialog(QDialog):
         insert_layout = QHBoxLayout()
         insert_layout.addWidget(QLabel("Task Name:"))
         self._new_template_name = QLineEdit()
-        connect_event(self._new_template_name.textChanged, self._on_new_template_name_entered)
+        self._new_template_name.textChanged.connect(self._on_new_template_name_entered)
         insert_layout.addWidget(self._new_template_name)
         self._insert_button = QPushButton(IconResource.ADD.get_icon(), "Add template")
         self._insert_button.setEnabled(False)
         insert_layout.addWidget(self._insert_button)
-        connect_event(self._insert_button.clicked, self._on_add_new_template_clicked)
+        self._insert_button.clicked.connect(self._on_add_new_template_clicked)
         self._delete_button = QPushButton(IconResource.REMOVE.get_icon(), "Delete template")
-        connect_event(self._delete_button.clicked, self._on_delete_template_clicked)
+        self._delete_button.clicked.connect(self._on_delete_template_clicked)
         insert_layout.addWidget(self._delete_button)
         self._delete_button.setEnabled(False)
 
@@ -82,22 +83,24 @@ class TemplatesDialog(QDialog):
             IconResource.TEMPLATES.get_icon(),
             "Create new tasks with selected templates",
         )
-        connect_event(self._insert_templates_to_tasks.clicked, self.accept)
+        self._insert_templates_to_tasks.clicked.connect(self.accept)
         layout.addWidget(self._insert_templates_to_tasks)
 
-    def _on_new_template_name_entered(self):
+    @Slot()
+    def _on_new_template_name_entered(self) -> None:
         self._insert_button.setEnabled(len(self._new_template_name.text()) > 0)
 
-    def _insert_new_item_on_model(self, name: str, checked: bool, index: int = -1):
+    def _insert_new_item_on_model(self, name: str, checked: bool, index: int = -1) -> None:
         q_item = QStandardItem(name)
         q_item.setCheckable(True)
-        q_item.setCheckState(QtCore.Qt.CheckState.Checked if checked else QtCore.Qt.CheckState.Unchecked)
+        q_item.setCheckState(Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
         if index == -1:
             index = self._templates_list_model.rowCount()
 
         self._templates_list_model.setItem(index, 0, q_item)
 
-    def _on_add_new_template_clicked(self):
+    @Slot()
+    def _on_add_new_template_clicked(self) -> None:
         new_template = self._new_template_name.text()
 
         for row in range(self._templates_list_model.rowCount()):
@@ -116,10 +119,12 @@ class TemplatesDialog(QDialog):
             self._insert_new_item_on_model(new_template, False)
             self._new_template_name.setText("")
 
-    def _on_item_selection_changed(self):
+    @Slot()
+    def _on_item_selection_changed(self) -> None:
         self._delete_button.setEnabled(len(self._templates_list.selectionModel().selectedRows()) > 0)
 
-    def _on_delete_template_clicked(self):
+    @Slot()
+    def _on_delete_template_clicked(self) -> None:
         selected_rows = self._templates_list.selectionModel().selectedRows()
         if selected_rows:
             self._templates_list_model.removeRow(selected_rows[0].row())
@@ -128,10 +133,10 @@ class TemplatesDialog(QDialog):
         result = set()
         for index in range(self._templates_list_model.rowCount()):
             item = self._templates_list_model.item(index)
-            if item.isCheckable() and item.checkState() == QtCore.Qt.CheckState.Checked:
+            if item.isCheckable() and item.checkState() == Qt.CheckState.Checked:
                 result.add(item.text())
         return result
 
     def get_entered_templates(self) -> dict[str, bool]:
         items = [self._templates_list_model.item(index) for index in range(self._templates_list_model.rowCount())]
-        return {item.text(): item.checkState() is QtCore.Qt.CheckState.Checked for item in items}
+        return {item.text(): item.checkState() is Qt.CheckState.Checked for item in items}

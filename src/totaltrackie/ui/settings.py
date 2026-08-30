@@ -20,13 +20,14 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from typing import Union
-
+# pylint: disable=no-name-in-module
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QSpinBox, QVBoxLayout, QWidget
 
 from totaltrackie.persistent import Settings
-from totaltrackie.ui._utils import connect_event
 from totaltrackie.ui.icons import IconResource
+
+
+# pylint: enable=no-name-in-module
 
 
 class SettingsWindow(QDialog):
@@ -58,9 +59,9 @@ class SettingsWindow(QDialog):
 
         confirm_layout = QHBoxLayout(self)
         confirm_button = QPushButton(IconResource.OK.get_icon(), "Confirm")
-        connect_event(confirm_button.clicked, self.accept)
+        confirm_button.clicked.connect(self.accept)
         cancel_button = QPushButton(IconResource.CANCEL.get_icon(), "Cancel")
-        connect_event(cancel_button.clicked, self.reject)
+        cancel_button.clicked.connect(self.reject)
         confirm_layout.addWidget(confirm_button)
         confirm_layout.addWidget(cancel_button)
 
@@ -68,7 +69,7 @@ class SettingsWindow(QDialog):
 
         self._settings_base = settings_base
 
-    def get_result(self) -> Union[Settings, None]:
+    def get_result(self) -> Settings | None:
         if self.result() == QDialog.DialogCode.Accepted:
             return Settings(
                 work_time_hours=self.work_time_hours.value(),

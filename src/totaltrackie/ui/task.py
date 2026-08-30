@@ -20,10 +20,11 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# pylint: disable=no-name-in-module
 from PySide6.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QWidget
+# pylint: enable=no-name-in-module
 
 from totaltrackie.core import Task
-from totaltrackie.ui._utils import connect_event
 from totaltrackie.ui.icons import IconResource
 
 
@@ -34,9 +35,9 @@ class EditTaskDialogWindow(QDialog):
         layout = QGridLayout()
         self.setLayout(layout)
         confirm_button = QPushButton(IconResource.OK.get_icon(), "Confirm")
-        connect_event(confirm_button.clicked, self.accept)
+        confirm_button.clicked.connect(self.accept)
         cancel_button = QPushButton(IconResource.CANCEL.get_icon(), "Cancel")
-        connect_event(cancel_button.clicked, self.reject)
+        cancel_button.clicked.connect(self.reject)
 
         self.task_name_edit = QLineEdit()
         self.task_name_edit.setPlaceholderText("Example Task Name")
