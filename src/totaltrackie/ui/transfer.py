@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.core import Task, TasksManager, TimeSpan, get_current_utc_time, transfer_time_from_task
@@ -196,6 +197,9 @@ class TransferTimeDialog(QDialog):
         self._source_task_combo = QComboBox()
         self._destination_task_combo = QComboBox()
         for item in _tasks:
+            if len(item.timespans) == 0 or item.total_seconds() < 60:
+                # task too small to transfer time for
+                continue
             self._source_task_combo.addItem(item.name)
         source_task_layout.addWidget(self._source_task_combo)
         dest_task_layout.addWidget(self._destination_task_combo)

@@ -22,6 +22,7 @@
 
 # pylint: disable=no-name-in-module
 from PySide6.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QWidget
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.core import Task

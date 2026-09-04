@@ -1,6 +1,6 @@
 [project]
 name = "totaltrackie"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
     "PySide6_Essentials ~= 6.11.2"
 ]
@@ -16,8 +16,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE.md", "NOTICE.md"]
 classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python"
+    "Programming Language :: Python",
 ]
 
 [project.urls]

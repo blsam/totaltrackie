@@ -22,6 +22,7 @@
 
 # pylint: disable=no-name-in-module
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME
@@ -51,13 +52,12 @@ class AboutDialog(QDialog):
 
         main_layout.addWidget(py_side6_label)
         main_layout.addWidget(qt_framework_label)
-        main_layout.addWidget(QLabel(
-            "Both libraries are used under the terms of GNU Lesser General Public License version 3 (LGPLv3)"
-        ))
+        main_layout.addWidget(
+            QLabel("Both libraries are used under the terms of GNU Lesser General Public License version 3 (LGPLv3)")
+        )
         license_label = QLabel('You can view the license at <a href="gnu.org/licenses/lgpl-3.0">gnu.org</a>')
         license_label.setOpenExternalLinks(True)
         main_layout.addWidget(license_label)
-
 
         layout.addLayout(main_layout)
 

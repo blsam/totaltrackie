@@ -44,9 +44,12 @@ class Task:
     timespans: list[TimeSpan]
 
     def total_seconds(self) -> int:
-        return int(sum(
-            ((x.stop if x.stop is not None else get_current_utc_time()) - x.start).total_seconds() for x in self.timespans
-        ))
+        return int(
+            sum(
+                ((x.stop if x.stop is not None else get_current_utc_time()) - x.start).total_seconds()
+                for x in self.timespans
+            )
+        )
 
     def is_started(self) -> bool:
         if self.timespans:

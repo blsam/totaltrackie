@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.ui.icons import IconResource

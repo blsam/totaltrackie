@@ -43,6 +43,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME, Task, get_current_utc_time
@@ -96,7 +97,9 @@ class PluginSettingsPersistentStore(PluginSettings):
         _logger.debug("Clear cache for settings of plugin '%s'", self._plugin_name)
 
 
-_PLUGIN_CALLABLE: TypeAlias = Callable[[Callable[..., None], QObject | None, dict[date, list[Task]], PluginSettings], None]
+_PLUGIN_CALLABLE: TypeAlias = Callable[
+    [Callable[..., None], QObject | None, dict[date, list[Task]], PluginSettings], None
+]
 
 
 class PluginSupportedFeatures(Flag):
@@ -144,7 +147,9 @@ def _v1_plugins(fn: Callable[..., None], p: QObject | None, d: dict[date, list[T
 
 
 @PluginRegistry.register(2, PluginSupportedFeatures.MULTI_DAY)
-def _v2_plugins(fn: Callable[..., None], p: QObject | None, d: dict[date, list[Task]], settings: PluginSettings) -> None:
+def _v2_plugins(
+    fn: Callable[..., None], p: QObject | None, d: dict[date, list[Task]], settings: PluginSettings
+) -> None:
     fn(p, d, settings)
 
 

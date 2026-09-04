@@ -26,6 +26,7 @@ from pathlib import PurePosixPath
 
 # pylint: disable=no-name-in-module
 from PySide6.QtGui import QIcon
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME

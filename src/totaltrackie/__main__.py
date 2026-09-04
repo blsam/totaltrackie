@@ -19,7 +19,7 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
-
+import ctypes
 import logging
 import sys
 import traceback
@@ -31,11 +31,12 @@ from typing import Any
 
 # pylint: disable=no-name-in-module
 from PySide6.QtWidgets import QApplication, QMessageBox
-# pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME
 from totaltrackie.persistent import PersistenceManager
 from totaltrackie.ui.main import MainWindow
+
+# pylint: enable=no-name-in-module
 
 _logger = logging.getLogger(APP_NAME)
 
@@ -96,6 +97,11 @@ def main() -> int:
         sys.__excepthook__(exc_type, exc, trace)
 
     sys.excepthook = _exc_handler
+
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(f"python.app.{__package__}")
+    except AttributeError:
+        pass
 
     _application = QApplication(sys.argv)
 

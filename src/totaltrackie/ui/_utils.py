@@ -23,6 +23,7 @@ from datetime import date
 
 # pylint: disable=no-name-in-module
 from PySide6.QtCore import QDate
+
 # pylint: enable=no-name-in-module
 
 

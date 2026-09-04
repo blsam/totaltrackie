@@ -26,7 +26,6 @@ from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QSpinBo
 from totaltrackie.persistent import Settings
 from totaltrackie.ui.icons import IconResource
 
-
 # pylint: enable=no-name-in-module
 
 

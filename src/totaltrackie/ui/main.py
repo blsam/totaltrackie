@@ -44,6 +44,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 # pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME, Task, TasksManager
@@ -56,7 +57,6 @@ from totaltrackie.ui.settings import SettingsWindow
 from totaltrackie.ui.task import EditTaskDialogWindow
 from totaltrackie.ui.templates import TemplatesDialog
 from totaltrackie.ui.transfer import TransferTimeDialog
-
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +254,12 @@ class MainWindow(QMainWindow):
         new_templates = templates_dialog.get_entered_templates()
 
         if code == QDialog.DialogCode.Accepted:
+            active_tasks = set(item.name for item in self._task_manager.get_tasks())
+
             for task in templates_to_insert:
+                if task in active_tasks:
+                    continue
+
                 self._task_manager.add(Task(task, "", []))
 
             self._tasks_model.refresh(self._task_manager, force=True)
@@ -489,7 +494,9 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _on_task_transfer_time_menu_clicked(self) -> None:
-        if not self._task_manager.has_tasks():
+        has_valid_tasks = any(item.timespans and item.total_seconds() >= 60 for item in self._task_manager.get_tasks())
+
+        if not self._task_manager.has_tasks() or not has_valid_tasks:
             box = QMessageBox(QMessageBox.Icon.Warning, "Warning", "No tasks to transfer time for!")
             box.setStandardButtons(QMessageBox.StandardButton.Ok)
             box.setWindowIcon(self.windowIcon())
