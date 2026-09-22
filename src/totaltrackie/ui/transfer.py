@@ -23,7 +23,6 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import Final
 
-# pylint: disable=no-name-in-module
 from PySide6.QtCore import QRect, QSize, Qt, QTime, Slot
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import (
@@ -39,8 +38,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-# pylint: enable=no-name-in-module
 
 from totaltrackie.core import Task, TasksManager, TimeSpan, get_current_utc_time, transfer_time_from_task
 from totaltrackie.ui.icons import IconResource

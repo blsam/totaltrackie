@@ -1,0 +1,9 @@
+{
+  "update_url": "https://api.github.com/repos/blsam/totaltrackie/releases/latest",
+  "known_plugins": {
+    "totaltrackie-jira-tempo-plugin": {
+      "url": "https://api.github.com/repos/blsam/totaltrackie-jira-tempo-plugin/releases/latest",
+      "updatable": true
+    }
+  }
+}

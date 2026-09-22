@@ -24,9 +24,8 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
-# pylint: disable=no-name-in-module
 from PySide6.QtCore import QDate, QModelIndex, QTimer, QUrl, Slot
-from PySide6.QtGui import QAction, QDesktopServices, QFont, QStandardItem, QStandardItemModel, QCloseEvent
+from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QFont, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -45,8 +44,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# pylint: enable=no-name-in-module
-
 from totaltrackie.core import APP_NAME, Task, TasksManager
 from totaltrackie.persistent import PersistenceManager
 from totaltrackie.ui._utils import q_date_to_python_date
@@ -57,6 +54,8 @@ from totaltrackie.ui.settings import SettingsWindow
 from totaltrackie.ui.task import EditTaskDialogWindow
 from totaltrackie.ui.templates import TemplatesDialog
 from totaltrackie.ui.transfer import TransferTimeDialog
+from totaltrackie.ui.update import UpdateDialog
+from totaltrackie.update_helper import is_update_functionality_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +191,7 @@ class MainWindow(QMainWindow):
         report_action = QAction(IconResource.REPORT.get_icon(), "Build &report...", self)
         report_action.triggered.connect(self._on_report_button_click)
 
-        transfer_time_action = QAction(IconResource.START.get_icon(), "&Transfer time", self)
+        transfer_time_action = QAction(IconResource.START.get_icon(), "&Transfer time...", self)
         transfer_time_action.triggered.connect(self._on_task_transfer_time_menu_clicked)
 
         task_menu.addActions((start_action, stop_action))
@@ -211,14 +210,19 @@ class MainWindow(QMainWindow):
         preferences_menu.addAction(settings_action)
         preferences_menu.addAction(template_action)
 
-        help_menu = self.menuBar().addMenu("&Help")
+        help_menu = self.menuBar().addMenu("&About")
         about_action = QAction("About", self)
         about_action.triggered.connect(self._on_about_clicked)
 
         open_storage_action = QAction("Open persistent &storage location...", self)
         open_storage_action.triggered.connect(self._on_open_storage_clicked)
 
+        update_action = QAction("Updates and plugins manager...", self)
+        update_action.triggered.connect(self._on_update_clicked)
+        update_action.setEnabled(is_update_functionality_enabled())
+
         help_menu.addAction(open_storage_action)
+        help_menu.addAction(update_action)
         help_menu.addSeparator()
         help_menu.addAction(about_action)
 
@@ -229,6 +233,11 @@ class MainWindow(QMainWindow):
             templates=template_action,
             settings=settings_action,
         )
+
+    @Slot()
+    def _on_update_clicked(self) -> None:
+        dialog = UpdateDialog(self, self._persistent_store)
+        dialog.exec()
 
     @Slot()
     def _on_open_storage_clicked(self) -> None:

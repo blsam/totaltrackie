@@ -1,0 +1,93 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Create GitHub Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build packaging
+
+      - name: Copy update site file
+        run: |
+          New-Item -ItemType Directory -Force -Path .\src\totaltrackie\update_data
+          Copy-Item -Path .github\update.json -Destination .\src\totaltrackie\update_data\update.json -Force
+
+      - name: Build Source Package and Wheel
+        run: python -m build
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout PyApp Source Repo
+        uses: actions/checkout@v4
+        with:
+          repository: ofek/pyapp
+          ref: v0.29.0
+          path: pyapp-build-dir
+
+      - name: Build Windows Executable via PyApp
+        shell: bash
+        working-directory: pyapp-build-dir
+        run: |
+          WHEEL_FILE=$(ls ../dist/*.whl | head -n 1)
+          export PYAPP_PROJECT_PATH="$WHEEL_FILE"
+          
+          cargo build --release --locked
+          cp target/release/pyapp.exe ../dist/totaltrackie.exe
+        env:
+          PYAPP_PROJECT_NAME: "totaltrackie"
+          PYAPP_PROJECT_VERSION: "${{ github.ref_name }}"
+
+      - name: Determine Release Type via Python
+        id: check-tag
+        shell: bash
+        run: |
+          IS_PRERELEASE=$(python -c "
+          from packaging.version import parse
+          import os
+          
+          tag = os.environ['GITHUB_REF_NAME'].lstrip('v')
+          version = parse(tag)
+          
+          print('true' if version.is_prerelease else 'false')
+          ")
+          
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Detected prerelease status: $IS_PRERELEASE"
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ steps.check-tag.outputs.is_prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          
+          gh release create "${{ github.ref_name }}" dist/* \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            $PRERELEASE_FLAG

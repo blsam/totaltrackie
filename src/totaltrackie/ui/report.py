@@ -29,8 +29,7 @@ from importlib.metadata import entry_points
 from pathlib import Path
 from typing import TypeAlias
 
-# pylint: disable=no-name-in-module
-from PySide6.QtCore import Slot, QObject
+from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QDateEdit,
@@ -43,8 +42,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-# pylint: enable=no-name-in-module
 
 from totaltrackie.core import APP_NAME, Task, get_current_utc_time
 from totaltrackie.persistent import PersistenceManager, Settings

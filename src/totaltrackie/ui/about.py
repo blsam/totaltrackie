@@ -20,10 +20,8 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# pylint: disable=no-name-in-module
-from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-# pylint: enable=no-name-in-module
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from totaltrackie.core import APP_NAME
 from totaltrackie.ui.icons import IconResource

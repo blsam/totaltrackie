@@ -1,10 +1,12 @@
 [project]
 name = "totaltrackie"
-version = "1.1.1"
+version = "1.2.0"
 dependencies = [
-    "PySide6_Essentials ~= 6.11.2"
+    "PySide6_Essentials ~= 6.11.2",
+    "pip ~= 26.2.1",
+    "packaging ~= 26.3",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     {name = "blsam"},
 ]
@@ -35,7 +37,7 @@ totaltrackie = "totaltrackie.__main__:main"
 "Default generator" = "totaltrackie.ui.report:generic_report_generator"
 
 [tool.setuptools.package-data]
-totaltrackie = ["icon_data/*.svg"]
+totaltrackie = ["icon_data/*.svg", "update_data/update.json"]
 
 [dependency-groups]
 dev = [
@@ -84,7 +86,13 @@ extra_checks = true
 [tool.pylint.format]
 max-line-length = 120
 
+[tool.pylint.typecheck]
+generated-members = [
+    ".*<no-name>.*",
+]
+
 [tool.pylint.main]
+extension-pkg-allow-list = ["PySide6"]
 source-roots = ["src"]
 py-version = "3.11"
 load-plugins = [

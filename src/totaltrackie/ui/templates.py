@@ -20,8 +20,8 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 #
 
-# pylint: disable=no-name-in-module
-from PySide6.QtCore import Slot, Qt
+
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QDialog,
@@ -34,8 +34,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-# pylint: enable=no-name-in-module
 
 from totaltrackie.ui.icons import IconResource
 
